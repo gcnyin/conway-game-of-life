@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Local build and test output
+# Note: the standalone index.html is the deliverable and is intentionally tracked.
+/artifacts/
+/coverage/
+/dist/
+/test-results/
+/playwright-report/
+/blob-report/
+/.nyc_output/
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / tooling caches
+.idea/
+.vscode/
+.history/
+.turbo/
+*.swp
+*.swo
+*~
+.eslintcache
+*.tsbuildinfo
+
+# OS metadata
+.DS_Store
+._*
+Thumbs.db
+desktop.ini

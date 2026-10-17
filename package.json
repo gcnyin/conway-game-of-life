@@ -1,0 +1,31 @@
+{
+  "name": "conway-game-of-life",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Conway's Game of Life as an interactive three.js cellular automaton, packaged as one standalone HTML file.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "smoke": "node scripts/smoke.mjs",
+    "check": "npm test && npm run build && npm run smoke"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "keywords": [
+    "game-of-life",
+    "conway",
+    "three.js",
+    "cellular-automaton",
+    "webgl"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright-core": "^1.64.1"
+  }
+}

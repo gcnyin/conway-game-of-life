@@ -1,0 +1,239 @@
+<!doctype html>
+<!--
+  Game of Life · 3D — a standalone Conway's Game of Life.
+  App code: MIT License. three.js: MIT. Space Grotesk & JetBrains Mono: SIL OFL 1.1.
+  See THIRD_PARTY_NOTICES.md in the project for full license texts.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#03060c" />
+  <meta name="color-scheme" content="dark" />
+  <meta
+    name="description"
+    content="Conway's Game of Life rendered in three.js. A living, three-dimensional cellular automaton you can play, paint and observe."
+  />
+  <title>Game of Life — a 3D cellular automaton</title>
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23050b12'/%3E%3Cg fill='%2369ffe2'%3E%3Crect x='13' y='5' width='6' height='6' rx='1.5'/%3E%3Crect x='21' y='13' width='6' height='6' rx='1.5'/%3E%3Crect x='5' y='21' width='6' height='6' rx='1.5'/%3E%3Crect x='13' y='21' width='6' height='6' rx='1.5'/%3E%3Crect x='21' y='21' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3C/svg%3E"
+  />
+  <!-- Typography: Space Grotesk & JetBrains Mono — SIL Open Font License 1.1. -->
+  <style>
+__STYLES__
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas
+      id="scene"
+      aria-label="3D Game of Life board. Drag to orbit the camera, tap cells to toggle them, or enable draw mode to paint."
+    ></canvas>
+
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <main class="hud">
+      <header class="topbar">
+        <div class="brand panel">
+          <div class="brand-mark" aria-hidden="true">
+            <i></i><i class="on"></i><i></i>
+            <i></i><i></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i>
+          </div>
+          <div class="brand-copy">
+            <span class="eyebrow">Conway's</span>
+            <h1>Game of Life</h1>
+            <p class="brand-meta">3D cellular automaton <span>·</span> B3/S23</p>
+          </div>
+        </div>
+
+        <div class="hint-wrap">
+          <p class="hint" id="hint"></p>
+        </div>
+
+        <section class="stats panel" aria-label="Simulation statistics">
+          <div class="stats-main">
+            <div class="stat">
+              <span class="stat-label">Generation</span>
+              <span class="stat-value" id="generation">0000</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Population</span>
+              <span class="stat-value" id="population">0000</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Density</span>
+              <span class="stat-value" id="density">0.0%</span>
+            </div>
+            <div class="status" id="status" data-state="running" role="status">
+              <i class="status-dot"></i>
+              <span id="status-label">Running</span>
+            </div>
+          </div>
+          <div class="stats-foot">
+            <span class="chart-caption">Population history</span>
+            <canvas id="chart" width="640" height="80" aria-hidden="true"></canvas>
+          </div>
+        </section>
+
+      </header>
+
+      <p class="touch-hint" aria-hidden="true">Drag to orbit <span>·</span> Tap cells to toggle <span>·</span> Pinch to zoom</p>
+
+      <footer class="dock panel" aria-label="Simulation controls">
+        <div class="control-group">
+          <button
+            class="btn btn-primary"
+            id="play"
+            type="button"
+            data-running="true"
+            title="Pause / resume (Space)"
+            aria-label="Pause simulation"
+          >
+            <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="6.8" y="5" width="3.8" height="14" rx="1.3"></rect>
+              <rect x="13.4" y="5" width="3.8" height="14" rx="1.3"></rect>
+            </svg>
+            <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8.2 5.4v13.2L19 12z"></path>
+            </svg>
+            <span class="btn-label" id="play-label">Pause</span>
+          </button>
+          <button
+            class="btn"
+            id="step"
+            type="button"
+            aria-label="Advance one generation"
+            title="Advance one generation (S)"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 5.5v13l9.4-6.5z"></path>
+              <rect x="16.9" y="5.5" width="2.4" height="13" rx="1"></rect>
+            </svg>
+            <span class="btn-label">Step</span>
+          </button>
+        </div>
+
+        <span class="divider" aria-hidden="true"></span>
+
+        <div class="control-group">
+          <button
+            class="btn btn-icon"
+            id="randomize"
+            type="button"
+            aria-label="Randomize the board"
+            data-tip="Randomize"
+          >
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="3.5"></rect>
+              <circle cx="9" cy="9" r="1.2"></circle>
+              <circle cx="15" cy="15" r="1.2"></circle>
+              <circle cx="15" cy="9" r="1.2"></circle>
+              <circle cx="9" cy="15" r="1.2"></circle>
+            </svg>
+          </button>
+          <button
+            class="btn btn-icon"
+            id="clear"
+            type="button"
+            aria-label="Clear the board"
+            data-tip="Clear"
+          >
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.5 7h15"></path>
+              <path d="M9.5 7V4.9c0-.5.4-.9.9-.9h3.2c.5 0 .9.4.9.9V7"></path>
+              <path d="M6.8 7l.9 12.1c0 .5.4.9.9.9h6.8c.5 0 .9-.4.9-.9L17.2 7"></path>
+              <path d="M10.2 10.5v6.2M13.8 10.5v6.2"></path>
+            </svg>
+          </button>
+        </div>
+
+        <span class="divider" aria-hidden="true"></span>
+
+        <label class="field seed-field">
+          <span class="field-head"><span>Seed</span></span>
+          <span class="select-shell">
+            <select id="seed" aria-label="Seed pattern"></select>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 9.5l6 6 6-6"></path>
+            </svg>
+          </span>
+        </label>
+
+        <label class="field speed-field">
+          <span class="field-head"><span>Rate</span><output id="speed-output" for="speed">8 /s</output></span>
+          <input
+            class="range"
+            id="speed"
+            type="range"
+            min="1"
+            max="40"
+            step="1"
+            value="8"
+            aria-label="Simulation speed in generations per second"
+          />
+        </label>
+
+        <span class="divider" aria-hidden="true"></span>
+
+        <div class="control-group toggles">
+          <button
+            class="btn toggle is-on"
+            id="wrap"
+            type="button"
+            aria-label="Wrap edges"
+            aria-pressed="true"
+            title="Toggle wrapping at the edges (W)"
+          >
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true">
+              <ellipse cx="12" cy="12" rx="8.5" ry="4.7"></ellipse>
+              <ellipse cx="12" cy="12" rx="4.7" ry="8.5"></ellipse>
+            </svg>
+            <span class="btn-label">Wrap</span>
+          </button>
+          <button
+            class="btn toggle"
+            id="draw"
+            type="button"
+            aria-label="Draw mode"
+            aria-pressed="false"
+            title="Toggle draw mode (P). Shift-drag also paints."
+          >
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.4 19.6l4.2-1 9.9-9.9a2.25 2.25 0 0 0-3.2-3.2L5.4 15.4z"></path>
+              <path d="M13.4 6.6l4 4"></path>
+            </svg>
+            <span class="btn-label">Draw</span>
+          </button>
+          <button
+            class="btn toggle is-on"
+            id="orbit"
+            type="button"
+            aria-label="Auto-orbit camera"
+            aria-pressed="true"
+            title="Toggle automatic camera orbit"
+          >
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 5.5v5h-5"></path>
+              <path d="M4 18.5v-5h5"></path>
+              <path d="M5.6 9.1a7.5 7.5 0 0 1 12.5-2.1l1.9 1.5"></path>
+              <path d="M18.4 14.9a7.5 7.5 0 0 1-12.5 2.1l-1.9-1.5"></path>
+            </svg>
+            <span class="btn-label">Orbit</span>
+          </button>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <noscript>
+    <div class="no-js">This experiment needs JavaScript and WebGL.</div>
+  </noscript>
+
+  <script>
+__SCRIPT__
+  </script>
+</body>
+</html>
